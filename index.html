@@ -2515,28 +2515,67 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
 
         function openPaymentModal(id) { let b=bhmsData.boarders.find(bd=>bd.id==id); document.getElementById('pay-boarder-id').value = id; document.getElementById('pay-boarder-name').innerText = b.name; document.getElementById('pay-boarder-balance').innerText=`₱${b.balance}`; document.getElementById('pay-amount').value=''; document.getElementById('paymentModal').classList.remove('hidden'); }
         
-        function savePayment(e) {
-            e.preventDefault(); 
-            let bId = document.getElementById('pay-boarder-id').value; 
+        async function savePayment(e) {
+            e.preventDefault();
+            let bId = document.getElementById('pay-boarder-id').value;
             let amt = parseFloat(document.getElementById('pay-amount').value);
             let refCode = document.getElementById('pay-ref').value;
-            let dateString = new Date().toISOString().split('T')[0];
-            let txId = 'TX-' + Date.now();
-            
-            let transaction = { id: txId, type: 'Payment', boarderId: bId, date: dateString, datetime: getFormattedDateTime(new Date()), amount: amt, details: refCode };
-            bhmsData.transactions.push(transaction);
-            
-            let b = bhmsData.boarders.find(bd=>bd.id==bId); 
-            b.balance -= amt; 
-            
-            logAudit('Payment', `Received Payment P${amt} from ${b.name}`); 
-            mockSendEmail(b.email, "Payment Received", `We received your payment of P${amt}. Thank you!`, "Billing"); 
-            
-            saveData(); 
-            closeModal('paymentModal'); 
-            showToast('Payment Recorded');
-            
-            printReceipt(transaction, b);
+            let b = bhmsData.boarders.find(bd => bd.id == bId);
+            if (!b) { showToast('Tenant not found', 'error'); return; }
+            if (isNaN(amt) || amt <= 0) { showToast('Enter a valid amount', 'error'); return; }
+
+            // ==== FIX: route through backend /api/payment so the branded HTML
+            // receipt is rendered (tplPaymentReceipt) and dispatched through
+            // sendEmailWithRetry using the SMTP config. The old mockSendEmail
+            // path sent a plain-text note that Gmail routes to spam and never
+            // triggered the real receipt template. ====
+            let transaction = null;
+            try {
+                const resp = await fetch('https://mdms-backend-gzle.onrender.com/api/payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        boarderId: bId,
+                        amount: amt,
+                        reference: refCode,
+                        orNumber: 'OR-' + Date.now(),
+                        // Send the freshly-edited SMTP config so the backend can
+                        // dispatch even before the next /api/data sync lands.
+                        emailConfig: bhmsData.emailConfig
+                    })
+                });
+                const data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Payment API rejected the request.');
+                transaction = data.transaction;
+
+                // Mirror server-authoritative state locally so the UI stays in sync.
+                b.balance = Math.max(0, (parseFloat(b.balance) || 0) - amt);
+                if (b.balance === 0) b.status = 'Paid';
+                bhmsData.transactions.push(transaction || {
+                    id: 'TX-' + Date.now(), type: 'Payment', boarderId: bId,
+                    date: new Date().toISOString().split('T')[0],
+                    datetime: getFormattedDateTime(new Date()),
+                    amount: amt, details: refCode
+                });
+
+                logAudit('Payment', `Received Payment P${amt} from ${b.name}`);
+                saveData();
+                closeModal('paymentModal');
+                showToast('Payment recorded — receipt emailed to ' + (b.email || 'tenant'));
+                refreshEmailLogsFromServer();
+                printReceipt(transaction || { id: 'TX-'+Date.now(), amount: amt, date: new Date().toISOString().split('T')[0], details: refCode }, b);
+            } catch (err) {
+                console.error('[savePayment] backend failure, falling back to local-only record:', err);
+                // Local fallback so operations continue even if backend is down.
+                const fallbackTx = { id: 'TX-' + Date.now(), type: 'Payment', boarderId: bId, date: new Date().toISOString().split('T')[0], datetime: getFormattedDateTime(new Date()), amount: amt, details: refCode };
+                bhmsData.transactions.push(fallbackTx);
+                b.balance -= amt;
+                logAudit('Payment', `Received Payment P${amt} from ${b.name} (offline)`);
+                saveData();
+                closeModal('paymentModal');
+                showToast('Payment saved locally — receipt email may be delayed', 'error');
+                printReceipt(fallbackTx, b);
+            }
         }
 
         function renderMaintenance() {
