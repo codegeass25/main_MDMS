@@ -2935,10 +2935,49 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
         }
 
         function testEmail() {
-            if(!document.getElementById('smtp-enabled').checked) { showToast("Enable SMTP first.", "error"); return; }
-            fetch('https://mdms-backend-9d6m.onrender.com/api/test-email', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(bhmsData.emailConfig) })
-              .then(r=>r.json()).then(d=>{ showToast(d.success ? 'SMTP OK — test email sent.' : ('Failed: '+(d.error||'unknown')), d.success?'success':'error'); });
-        }
+    if (!document.getElementById('smtp-enabled').checked) {
+        showToast("Enable SMTP first.", "error");
+        return;
+    }
+
+    const senderEmail = (document.getElementById('smtp-gmail').value || '').trim();
+    const defaultTo = senderEmail;
+    const to = (prompt('Send test email to:', defaultTo) || '').trim();
+    if (!to) {
+        showToast('Test email cancelled — recipient required.', 'error');
+        return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+        showToast('Invalid recipient email address.', 'error');
+        return;
+    }
+
+    const payload = {
+        to,
+        host: (document.getElementById('smtp-server').value || '').trim() || 'smtp-relay.brevo.com',
+        port: (document.getElementById('smtp-port').value || '').trim() || '587',
+        user: (document.getElementById('smtp-user').value || '').trim(),
+        pass: document.getElementById('smtp-pass').value || '',
+        from: senderEmail,
+        fromName: (document.getElementById('smtp-name').value || '').trim()
+    };
+
+    fetch('https://mdms-backend-9d6m.onrender.com/api/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(d => {
+        showToast(
+            d.success
+                ? ('SMTP OK — test email sent to ' + to + '.')
+                : ('Failed: ' + (d.error || 'unknown')),
+            d.success ? 'success' : 'error'
+        );
+    })
+    .catch(e => showToast('Request error: ' + e.message, 'error'));
+}
 
         async function runRemindersNow() {
             showToast('Running reminder engine…','info');
