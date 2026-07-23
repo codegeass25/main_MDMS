@@ -259,7 +259,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
 </style>
 
 
-<script>window.API_URL = "https://mdms-backend-gzle.onrender.com";</script>
+<script>window.API_URL = "https://mdms-backend-v2.onrender.com";</script>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen flex overflow-hidden font-sans">
 
@@ -911,7 +911,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
             // fall back to whatever localStorage had (offline mode).
             if (location.protocol.startsWith('http')) {
                 try {
-                    const response = await fetch('https://mdms-backend-gzle.onrender.com/api/data', { cache: 'no-store' });
+                    const response = await fetch('https://mdms-backend-v2.onrender.com/api/data', { cache: 'no-store' });
                     if (response.ok) {
                         const serverData = await response.json();
                         if (serverData && Array.isArray(serverData.rooms) && serverData.rooms.length) {
@@ -1054,7 +1054,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
                 // Server owns emailLogs; strip before sending so we don't clobber
                 // scheduler / retry entries the backend wrote between our syncs.
                 const { emailLogs, ...payload } = bhmsData;
-                const r = await fetch('https://mdms-backend-gzle.onrender.com/api/data', {
+                const r = await fetch('https://mdms-backend-v2.onrender.com/api/data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1087,7 +1087,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
         async function refreshEmailLogsFromServer() {
             if (!location.protocol.startsWith('http')) return;
             try {
-                const r = await fetch('https://mdms-backend-gzle.onrender.com/api/email-logs', { cache: 'no-store' });
+                const r = await fetch('https://mdms-backend-v2.onrender.com/api/email-logs', { cache: 'no-store' });
                 if (!r.ok) return;
                 const logs = await r.json();
                 if (Array.isArray(logs)) {
@@ -1129,7 +1129,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
         async function mockSendEmail(toEmail, subject, body, type="Notification") {
             if(!bhmsData.emailConfig.enabled) return;
             try {
-                const response = await fetch('https://mdms-backend-gzle.onrender.com/api/send-email', {
+                const response = await fetch('https://mdms-backend-v2.onrender.com/api/send-email', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2530,7 +2530,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
             let backendOk = false;
             let serverTx = null;
             try {
-                const resp = await fetch('https://mdms-backend-gzle.onrender.com/api/payment', {
+                const resp = await fetch('https://mdms-backend-v2.onrender.com/api/payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2570,7 +2570,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
             } else {
                 // Refresh local mirror from server so balance/status reflect truth.
                 try {
-                    const r = await fetch('https://mdms-backend-gzle.onrender.com/api/data', { cache: 'no-store' });
+                    const r = await fetch('https://mdms-backend-v2.onrender.com/api/data', { cache: 'no-store' });
                     if (r.ok) {
                         const fresh = await r.json();
                         if (fresh && fresh.boarders) bhmsData = fresh;
@@ -2914,7 +2914,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
             e.preventDefault();
             bhmsData.emailConfig = { enabled: document.getElementById('smtp-enabled').checked, server: document.getElementById('smtp-server').value, port: document.getElementById('smtp-port').value, email: document.getElementById('smtp-gmail').value, pass: document.getElementById('smtp-pass').value, name: document.getElementById('smtp-name').value };
             saveData(); showToast('Email settings saved!');
-            fetch('https://mdms-backend-gzle.onrender.com/api/reload-config', { method: 'POST' }).catch(()=>{});
+            fetch('https://mdms-backend-v2.onrender.com/api/reload-config', { method: 'POST' }).catch(()=>{});
         }
 
         function saveMaintenanceSettings(e) {
@@ -2930,18 +2930,18 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
             s.signature = document.getElementById('set-signature').value;
             s.footer = document.getElementById('set-footer').value;
             saveData(); showToast('Automation settings saved!');
-            fetch('https://mdms-backend-gzle.onrender.com/api/reload-config', { method: 'POST' }).catch(()=>{});
+            fetch('https://mdms-backend-v2.onrender.com/api/reload-config', { method: 'POST' }).catch(()=>{});
         }
 
         function testEmail() {
             if(!document.getElementById('smtp-enabled').checked) { showToast("Enable SMTP first.", "error"); return; }
-            fetch('https://mdms-backend-gzle.onrender.com/api/test-email', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(bhmsData.emailConfig) })
+            fetch('https://mdms-backend-v2.onrender.com/api/test-email', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(bhmsData.emailConfig) })
               .then(r=>r.json()).then(d=>{ showToast(d.success ? 'SMTP OK — test email sent.' : ('Failed: '+(d.error||'unknown')), d.success?'success':'error'); });
         }
 
         async function runRemindersNow() {
             showToast('Running reminder engine…','info');
-            try { const r = await fetch('https://mdms-backend-gzle.onrender.com/api/run-billing-reminders',{method:'POST'}); const d = await r.json();
+            try { const r = await fetch('https://mdms-backend-v2.onrender.com/api/run-billing-reminders',{method:'POST'}); const d = await r.json();
               showToast(`Reminders: sent=${d.sent||0} skipped=${d.skipped||0}`, 'success');
               if (typeof loadAllData === 'function') loadAllData();
               else if (typeof renderEmailLogs === 'function') renderEmailLogs();
