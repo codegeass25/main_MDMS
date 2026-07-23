@@ -1598,6 +1598,9 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
                 if (_isEntireLocked) {
                     // REQUEST 1: Checked-in Entire-Room reservation shows exactly ONE red occupant chip
                     bedsHtml = `<span class="rc-bed occ" title="Occupant"><i class="fa-solid fa-user"></i></span>`;
+                } else if (_mapEntireRes && _mapEntireRes.status === 'Active') {
+                    // Entire-Room RESERVED (not yet checked-in): show exactly ONE blue flag chip
+                    bedsHtml = `<span class="rc-bed res" title="Entire Room Reserved"><i class="fa-solid fa-bookmark"></i></span>`;
                 } else {
                     const beds = room.beds.slice(0, 12);
                     beds.forEach(b => {
@@ -1629,12 +1632,17 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
 
             // REQUEST 22-G: For entire-room / fully occupied → hide FREE + zero-value RES chip;
             // show entire-room banner in place of the free-bed indicator.
-            const _displayPct = _isEntireLocked ? 100 : pct;
+            const _isEntireReserved = !!(_mapEntireRes && _mapEntireRes.status === 'Active');
+            const _displayPct = _isEntireLocked ? 100 : (_isEntireReserved ? 100 : pct);
             const _displayOcc = _isEntireLocked ? capacity : occCount;
-            const showRes = !_isEntireLocked && resCount > 0;
-            const showFree = !_isEntireLocked && !_isFull;
+            const showRes = !_isEntireLocked && !_isEntireReserved && resCount > 0;
+            const showFree = !_isEntireLocked && !_isEntireReserved && !_isFull;
+            const showOcc = !_isEntireReserved && !_isEntireLocked;
             const entireBadge = _isEntireLocked
-                ? `<span class="ml-auto inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-rose-600"><i class="fa-solid fa-lock"></i> Entire Room</span>` : '';
+                ? `<span class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-rose-600"><i class="fa-solid fa-user"></i> 1 OCC ENTIRE ROOM</span>`
+                : (_isEntireReserved
+                    ? `<span class="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-blue-600"><i class="fa-solid fa-bookmark"></i> 1 RES ENTIRE ROOM</span>`
+                    : '');
 
             return `
                 <div onclick="handleRoomClick(${room.id})" class="room-card ${statusClass}" title="${room.roomName} — ${displayStatus}">
@@ -1650,13 +1658,13 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
 
                     <div class="rc-progress-wrap">
                         <div class="rc-progress-meta">
-                            <!-- REQUEST 1: hide "X of Y beds" text when room is Checked-in under an Entire Room Reservation -->
-                            ${_isEntireLocked ? '<span></span>' : `<span>${_displayOcc} of ${capacity} beds</span>`}
+                            <!-- Hide "X of Y beds" text when room is Reserved or Checked-in under an Entire Room Reservation -->
+                            ${_mapEntireRes ? '<span></span>' : `<span>${_displayOcc} of ${capacity} beds</span>`}
                             <span>${_displayPct}%</span>
                         </div>
                         <div class="rc-progress"><span style="width:${_displayPct}%"></span></div>
                         <div class="flex items-center gap-3 text-[10px] mt-1.5 font-bold uppercase tracking-wider text-slate-500">
-                            <span><i class="fa-solid fa-user text-red-500"></i> ${occCount} Occ</span>
+                            ${showOcc ? `<span><i class="fa-solid fa-user text-red-500"></i> ${occCount} Occ</span>` : ''}
                             ${showRes ? `<span><i class="fa-solid fa-bookmark text-blue-500"></i> ${resCount} Res</span>` : ''}
                             ${showFree ? `<span><i class="fa-regular fa-square text-emerald-500"></i> ${availCount} Free</span>` : ''}
                             ${entireBadge}
