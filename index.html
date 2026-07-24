@@ -259,7 +259,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
 </style>
 
 
-<script>window.API_URL = "https://mdms-backend-9d6m.onrender.com";</script>
+<script>window.API_URL = "https://sunny-beneficial-fighters-try.trycloudflare.com";</script>
 </head>
 <body class="bg-gray-50 text-gray-800 h-screen flex overflow-hidden font-sans">
 
@@ -911,7 +911,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
             // fall back to whatever localStorage had (offline mode).
             if (location.protocol.startsWith('http')) {
                 try {
-                    const response = await fetch('https://mdms-backend-9d6m.onrender.com/api/data', { cache: 'no-store' });
+                    const response = await fetch('https://sunny-beneficial-fighters-try.trycloudflare.com/api/data', { cache: 'no-store' });
                     if (response.ok) {
                         const serverData = await response.json();
                         if (serverData && Array.isArray(serverData.rooms) && serverData.rooms.length) {
@@ -1054,7 +1054,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
                 // Server owns emailLogs; strip before sending so we don't clobber
                 // scheduler / retry entries the backend wrote between our syncs.
                 const { emailLogs, ...payload } = bhmsData;
-                const r = await fetch('https://mdms-backend-9d6m.onrender.com/api/data', {
+                const r = await fetch('https://sunny-beneficial-fighters-try.trycloudflare.com/api/data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1087,7 +1087,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
         async function refreshEmailLogsFromServer() {
             if (!location.protocol.startsWith('http')) return;
             try {
-                const r = await fetch('https://mdms-backend-9d6m.onrender.com/api/email-logs', { cache: 'no-store' });
+                const r = await fetch('https://sunny-beneficial-fighters-try.trycloudflare.com/api/email-logs', { cache: 'no-store' });
                 if (!r.ok) return;
                 const logs = await r.json();
                 if (Array.isArray(logs)) {
@@ -1129,7 +1129,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
         async function mockSendEmail(toEmail, subject, body, type="Notification") {
             if(!bhmsData.emailConfig.enabled) return;
             try {
-                const response = await fetch('https://mdms-backend-9d6m.onrender.com/api/send-email', {
+                const response = await fetch('https://sunny-beneficial-fighters-try.trycloudflare.com/api/send-email', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2539,7 +2539,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
             // triggered the real receipt template. ====
             let transaction = null;
             try {
-                const resp = await fetch('https://mdms-backend-9d6m.onrender.com/api/payment', {
+                const resp = await fetch('https://sunny-beneficial-fighters-try.trycloudflare.com/api/payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2915,7 +2915,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
             e.preventDefault();
             bhmsData.emailConfig = { enabled: document.getElementById('smtp-enabled').checked, server: document.getElementById('smtp-server').value || 'smtp-relay.brevo.com', port: document.getElementById('smtp-port').value || '587', user: document.getElementById('smtp-user').value || document.getElementById('smtp-gmail').value, email: document.getElementById('smtp-gmail').value, pass: document.getElementById('smtp-pass').value, name: document.getElementById('smtp-name').value };
             saveData(); showToast('Email settings saved!');
-            fetch('https://mdms-backend-9d6m.onrender.com/api/reload-config', { method: 'POST' }).catch(()=>{});
+            fetch('https://sunny-beneficial-fighters-try.trycloudflare.com/api/reload-config', { method: 'POST' }).catch(()=>{});
         }
 
         function saveMaintenanceSettings(e) {
@@ -2931,7 +2931,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
             s.signature = document.getElementById('set-signature').value;
             s.footer = document.getElementById('set-footer').value;
             saveData(); showToast('Automation settings saved!');
-            fetch('https://mdms-backend-9d6m.onrender.com/api/reload-config', { method: 'POST' }).catch(()=>{});
+            fetch('https://sunny-beneficial-fighters-try.trycloudflare.com/api/reload-config', { method: 'POST' }).catch(()=>{});
         }
 
         function testEmail() {
@@ -2962,7 +2962,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
         fromName: (document.getElementById('smtp-name').value || '').trim()
     };
 
-    fetch('https://mdms-backend-9d6m.onrender.com/api/test-email', {
+    fetch('https://sunny-beneficial-fighters-try.trycloudflare.com/api/test-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -2981,7 +2981,7 @@ body.readonly-mode [data-write]{opacity:.5;pointer-events:none;filter:grayscale(
 
         async function runRemindersNow() {
             showToast('Running reminder engine…','info');
-            try { const r = await fetch('https://mdms-backend-9d6m.onrender.com/api/run-billing-reminders',{method:'POST'}); const d = await r.json();
+            try { const r = await fetch('https://sunny-beneficial-fighters-try.trycloudflare.com/api/run-billing-reminders',{method:'POST'}); const d = await r.json();
               showToast(`Reminders: sent=${d.sent||0} skipped=${d.skipped||0}`, 'success');
               if (typeof loadAllData === 'function') loadAllData();
               else if (typeof renderEmailLogs === 'function') renderEmailLogs();
